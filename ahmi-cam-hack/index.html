@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#10091d"><meta name="description" content="AHMI CAM HACK - consent-based camera, microphone and location tools on your own device.">
+<link rel="manifest" href="./manifest.webmanifest">
+<title>AHMI CAM HACK</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0712;--panel:#171020;--purple:#a855f7;--pink:#ec4899;--muted:#b9abc8}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#29113d 0,#0b0712 55%);color:#fff;font:16px system-ui,Arial,sans-serif;min-height:100vh}
+header{text-align:center;padding:34px 16px 18px}h1{margin:0;font-size:clamp(30px,7vw,48px);letter-spacing:2px;color:#e9c8ff;text-shadow:0 0 22px #a855f7}header p{color:var(--muted);margin:8px 0}
+main{width:min(900px,92%);margin:0 auto 50px}.notice{border:1px solid #65418a;background:#1b1028;border-radius:14px;padding:14px;color:#e6d8f1;font-size:14px;line-height:1.5}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:15px;margin-top:18px}.card{background:linear-gradient(145deg,#21152d,#120d1a);border:1px solid #54336d;border-radius:18px;padding:18px;box-shadow:0 10px 28px #0006}.card h2{font-size:19px;margin:0 0 8px}.card p{color:var(--muted);font-size:14px;line-height:1.5}
+button{background:linear-gradient(90deg,#9333ea,#db2777);color:white;border:0;border-radius:11px;padding:11px 15px;font-weight:700;cursor:pointer;margin:4px 4px 4px 0}button.secondary{background:#352442;border:1px solid #76518e}button:disabled{opacity:.5;cursor:not-allowed}
+video,audio{width:100%;border-radius:12px;background:#08060b;margin-top:10px}output,.result{display:block;white-space:pre-wrap;overflow-wrap:anywhere;background:#0c0911;border:1px solid #44304f;padding:10px;border-radius:10px;margin-top:10px;color:#e9d5ff;font-size:13px}
+footer{text-align:center;color:#8f7e9e;font-size:12px;padding:20px}
+</style></head>
+<body>
+<header><h1>AHMI CAM HACK</h1><p>Your personal device tools</p></header>
+<main>
+<div class="notice"><b>Privacy first:</b> These tools work only on this device after you press a button and approve the browser permission. They do not secretly access another person's camera, microphone or location, and they do not send recordings or location to a Telegram bot. Stop camera and microphone when finished.</div>
+<div class="grid">
+<section class="card"><h2>📷 Camera / Front Camera</h2><p>Preview your own camera. Choose front or rear camera and stop it any time.</p>
+<button id="front">Front camera</button><button id="rear" class="secondary">Rear camera</button><button id="stopCam" class="secondary">Stop camera</button><video id="video" autoplay playsinline muted></video><output id="camStatus">Camera is off.</output></section>
+<section class="card"><h2>🎙️ Audio Recorder</h2><p>Record audio from your own microphone after allowing permission. Recording stays in this browser session.</p>
+<button id="record">Start recording</button><button id="stopRec" class="secondary" disabled>Stop recording</button><audio id="audio" controls></audio><button id="saveAudio" class="secondary" disabled>Save recording</button><output id="micStatus">Microphone is off.</output></section>
+<section class="card"><h2>📍 My Location</h2><p>Show your current location only after you press the button and allow location access.</p><button id="locate">Get my location</button><output id="location">Location not requested.</output></section>
+<section class="card"><h2>🔗 Create App Link</h2><p>Copy this app's current web address to share it with someone.</p><button id="copyLink">Copy app link</button><output id="linkStatus">Your app link will appear here.</output></section>
+<section class="card"><h2>🎁 Free Fire Rewards</h2><p>For safety, this app does not generate fake reward claims, ask for game passwords, or collect account credentials. Use only official game events and redemption pages.</p><button class="secondary" id="ffInfo">Show safety tip</button><output id="ffStatus">Never share your Free Fire login or verification code.</output></section>
+</div></main><footer>AHMI CAM HACK · Permission-based tools · No hidden recording</footer>
+<script>
+let stream=null,recorder=null,chunks=[],audioBlob=null;
+const $=id=>document.getElementById(id);
+async function startCamera(facing){try{stopCamera();stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing}},audio:false});$('video').srcObject=stream;$('camStatus').textContent='Camera is running on this device. Press Stop camera when finished.'}catch(e){$('camStatus').textContent='Camera unavailable or permission denied: '+e.message}}
+function stopCamera(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$('video').srcObject=null;$('camStatus').textContent='Camera is off.'}
+$('front').onclick=()=>startCamera('user');$('rear').onclick=()=>startCamera('environment');$('stopCam').onclick=stopCamera;
+$('record').onclick=async()=>{try{const s=await navigator.mediaDevices.getUserMedia({audio:true});chunks=[];recorder=new MediaRecorder(s);recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};recorder.onstop=()=>{audioBlob=new Blob(chunks,{type:recorder.mimeType||'audio/webm'});$('audio').src=URL.createObjectURL(audioBlob);$('saveAudio').disabled=false;s.getTracks().forEach(t=>t.stop());$('micStatus').textContent='Recording stopped. Microphone is off.'};recorder.start();$('record').disabled=true;$('stopRec').disabled=false;$('micStatus').textContent='Recording is active. Press Stop recording to finish.'}catch(e){$('micStatus').textContent='Microphone unavailable or permission denied: '+e.message}};
+$('stopRec').onclick=()=>{if(recorder&&recorder.state!=='inactive'){recorder.stop();$('record').disabled=false;$('stopRec').disabled=true}};
+$('saveAudio').onclick=()=>{if(!audioBlob)return;const a=document.createElement('a');a.href=URL.createObjectURL(audioBlob);a.download='ahmi-audio-recording.webm';a.click()};
+$('locate').onclick=()=>{if(!navigator.geolocation){$('location').textContent='Geolocation is not supported by this browser.';return}$('location').textContent='Waiting for permission…';navigator.geolocation.getCurrentPosition(p=>{$('location').textContent='Latitude: '+p.coords.latitude+'\nLongitude: '+p.coords.longitude+'\nAccuracy: '+Math.round(p.coords.accuracy)+' metres';},e=>$('location').textContent='Could not get location: '+e.message,{enableHighAccuracy:true,timeout:15000})};
+$('copyLink').onclick=async()=>{try{await navigator.clipboard.writeText(location.href);$('linkStatus').textContent='App link copied: '+location.href}catch(e){$('linkStatus').textContent=location.href}};
+$('ffInfo').onclick=()=>$('ffStatus').textContent='Use official Garena / Free Fire channels for rewards. Never enter your password or OTP on third-party reward pages.';
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+window.addEventListener('pagehide',()=>{stopCamera();if(recorder&&recorder.state!=='inactive')recorder.stop()});
+</script></body></html>
